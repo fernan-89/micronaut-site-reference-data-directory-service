@@ -1,35 +1,38 @@
 # ADR-019: HTTP 409 Conflict for Every State Conflict
 
 ## Status
-Accepted — supersedes the status-code decision of [ADR-017](017-site-lifecycle-state-machine-and-http-422.md)
-(the lifecycle FSM and the deployment policy in ADR-017 are unchanged).
+Accepted
 
 ## Context
-ADR-017 reported illegal lifecycle moves as HTTP 422 while the four sibling Service Domains report the
-same class of failure as 409. A platform-wide client had to know which service used which status.
+RFC 9110 defines two adjacent status codes precisely:
 
-RFC 9110 defines the two codes precisely:
-
-- **409 Conflict** — the request is valid but cannot be applied because of the *current state* of the
-  target resource. The client may succeed later if the state changes.
+- **409 Conflict** — the request is valid but cannot be applied because of the *current state* of
+  the target resource. The client may succeed later if the state changes.
 - **422 Unprocessable Content** — the request is well formed but its *content* is semantically
   invalid on its own, whatever the state of the resource.
 - **400 Bad Request** — malformed syntax, a missing header or an unparsable identifier.
 
-An illegal transition (`DEPLOYED -> PROVISIONED`), an idempotent self-transition, mutating a
-decommissioned site and deploying an site that has no location are all decided by the aggregate's
-current state, so they are 409.
+This service has two independent lifecycle state machines sharing the same aggregate: `SiteStatus`
+(`ACTIVE <-> INACTIVE`) on the Site itself, and `RackStatus` (`ACTIVE -> DECOMMISSIONED`, terminal) on
+each nested Rack. Both an idempotent self-transition (`ACTIVE -> ACTIVE`) and an illegal transition
+(`DECOMMISSIONED -> ACTIVE`) are decided entirely by the aggregate's current state, not by anything
+wrong with the request body — so both are 409, matching the platform-wide contract already adopted by
+the four sibling Service Domains (see the Asset Registry's own ADR-019).
 
 ## Decision
-1. Platform contract: **409 for every state conflict** (FSM violations, duplicates, window collisions),
-   **422 only** for request content that is invalid regardless of state (bean validation cannot express
-   it), **400** for malformed input.
-2. `InvalidSiteStatusException` now carries `ERR-SITE-00409` and maps to 409, exactly like a duplicate
-   serial number. The `detail` member tells the two apart; both share `ERR-SITE-00409`, as
-   `ERR-USR-00409` does in the User domain.
-3. `ERR-SITE-00422` is retired. The Postman suite, README error catalog and tests were updated.
+1. Platform contract carried over unchanged: **409 for every state conflict** (FSM violations,
+   idempotent self-transitions, duplicates), **400** for malformed input. This service never needed a
+   422 case — every Site/Rack transition is decided by state alone, so `ERR-SITE-00422` was never
+   introduced in the first place.
+2. `InvalidSiteStatusException` carries `ERR-SITE-00409` and maps to 409 for both the Site-level and
+   the Rack-level FSM. The `detail` member tells idempotency violations apart from illegal transitions;
+   both share `ERR-SITE-00409`, as `ERR-USR-00409` does in the User domain.
+3. A `SiteNotFoundException` for a missing nested Building/Room/Rack id is 404, not 409 — the resource
+   referenced in the URL genuinely does not exist, which is a different failure than a valid resource
+   refusing a transition.
 
 ## Consequences
-- Positive: one predictable error contract across the platform; clients need no per-service rules.
-- Negative: a breaking change for any client that matched on 422 / `ERR-SITE-00422`. The service is
-  pre-release and had no external consumers, so no compatibility shim is provided.
+- Positive: one predictable error contract across the platform; clients need no per-service rules, and
+  no 422 code path had to be built, tested or later retired.
+- Negative: none specific to this service — the FSMs are simple enough (two states each) that this
+  decision was free to adopt from day one.
