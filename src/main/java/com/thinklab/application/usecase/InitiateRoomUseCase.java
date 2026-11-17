@@ -36,10 +36,10 @@ public class InitiateRoomUseCase {
         this.siteRepository = siteRepository;
     }
 
-    public Mono<Void> execute(UUID siteId, UUID buildingId, InitiateRoomRequest request) {
+    public Mono<Void> execute(UUID siteId, UUID organisationId, UUID buildingId, InitiateRoomRequest request) {
         log.info("[USE CASE] Adding room '{}' to building {} of site ID: {}", request.roomName(), buildingId, siteId);
 
-        return siteRepository.findById(siteId)
+        return siteRepository.findById(siteId, organisationId)
                 .switchIfEmpty(Mono.error(new SiteNotFoundException(siteId)))
                 .flatMap(site -> {
                     site.findBuilding(buildingId); // fail fast, before spending a hash-service call

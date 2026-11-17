@@ -58,9 +58,9 @@ class SiteUseCaseTest {
     @Test
     @DisplayName("RetrieveSiteUseCase maps the found aggregate to a response")
     void retrieveFound() {
-        when(siteRepository.findById(siteId)).thenReturn(Mono.just(site));
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.just(site));
 
-        StepVerifier.create(new RetrieveSiteUseCase(siteRepository).execute(siteId))
+        StepVerifier.create(new RetrieveSiteUseCase(siteRepository).execute(siteId, organisationId))
                 .assertNext(res -> assertEquals("HQ", res.siteName()))
                 .verifyComplete();
     }
@@ -68,9 +68,9 @@ class SiteUseCaseTest {
     @Test
     @DisplayName("RetrieveSiteUseCase 404s when the aggregate does not exist")
     void retrieveNotFound() {
-        when(siteRepository.findById(siteId)).thenReturn(Mono.empty());
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.empty());
 
-        StepVerifier.create(new RetrieveSiteUseCase(siteRepository).execute(siteId))
+        StepVerifier.create(new RetrieveSiteUseCase(siteRepository).execute(siteId, organisationId))
                 .expectError(SiteNotFoundException.class)
                 .verify();
     }
@@ -86,24 +86,30 @@ class SiteUseCaseTest {
     }
 
     @Test
-    @DisplayName("UpdateSiteUseCase delegates directly to the repository")
+    @DisplayName("UpdateSiteUseCase checks the site is the caller's, then writes; another tenant's site is the same as none and nothing is written")
     void update() {
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.just(site));
         when(siteRepository.updateBasicInfo(siteId, "HQ 2", "addr2", "city2", "country2", "zip2", "tz2", 3.0, 4.0))
                 .thenReturn(Mono.empty());
 
         UpdateSiteRequest request = new UpdateSiteRequest("HQ 2", "addr2", "city2", "country2", "zip2", "tz2", 3.0, 4.0);
 
-        StepVerifier.create(new UpdateSiteUseCase(siteRepository).execute(siteId, request)).verifyComplete();
+        StepVerifier.create(new UpdateSiteUseCase(siteRepository).execute(siteId, organisationId, request)).verifyComplete();
         verify(siteRepository).updateBasicInfo(siteId, "HQ 2", "addr2", "city2", "country2", "zip2", "tz2", 3.0, 4.0);
+
+        UUID other = UUID.randomUUID();
+        when(siteRepository.findById(siteId, other)).thenReturn(Mono.empty());
+        StepVerifier.create(new UpdateSiteUseCase(siteRepository).execute(siteId, other, request)).expectError(SiteNotFoundException.class).verify();
+        org.mockito.Mockito.verify(siteRepository, org.mockito.Mockito.times(1)).updateBasicInfo(siteId, "HQ 2", "addr2", "city2", "country2", "zip2", "tz2", 3.0, 4.0);
     }
 
     @Test
     @DisplayName("ControlSiteUseCase loads the aggregate, validates the transition, then issues the write")
     void controlActivateDeactivate() {
-        when(siteRepository.findById(siteId)).thenReturn(Mono.just(site));
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.just(site));
         when(siteRepository.updateStatus(siteId, SiteStatus.ACTIVE, SiteStatus.INACTIVE)).thenReturn(Mono.empty());
 
-        StepVerifier.create(new ControlSiteUseCase(siteRepository).execute(siteId, ControlSiteUseCase.Action.DEACTIVATE))
+        StepVerifier.create(new ControlSiteUseCase(siteRepository).execute(siteId, organisationId, ControlSiteUseCase.Action.DEACTIVATE))
                 .verifyComplete();
         verify(siteRepository).updateStatus(siteId, SiteStatus.ACTIVE, SiteStatus.INACTIVE);
     }
@@ -111,9 +117,9 @@ class SiteUseCaseTest {
     @Test
     @DisplayName("ControlSiteUseCase 404s when the aggregate does not exist")
     void controlNotFound() {
-        when(siteRepository.findById(siteId)).thenReturn(Mono.empty());
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.empty());
 
-        StepVerifier.create(new ControlSiteUseCase(siteRepository).execute(siteId, ControlSiteUseCase.Action.ACTIVATE))
+        StepVerifier.create(new ControlSiteUseCase(siteRepository).execute(siteId, organisationId, ControlSiteUseCase.Action.ACTIVATE))
                 .expectError(SiteNotFoundException.class)
                 .verify();
     }
@@ -121,9 +127,9 @@ class SiteUseCaseTest {
     @Test
     @DisplayName("ControlSiteUseCase rejects an illegal transition before writing anything")
     void controlIllegalTransition() {
-        when(siteRepository.findById(siteId)).thenReturn(Mono.just(site));
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.just(site));
 
-        StepVerifier.create(new ControlSiteUseCase(siteRepository).execute(siteId, ControlSiteUseCase.Action.ACTIVATE))
+        StepVerifier.create(new ControlSiteUseCase(siteRepository).execute(siteId, organisationId, ControlSiteUseCase.Action.ACTIVATE))
                 .expectError(com.thinklab.domain.exception.InvalidSiteStatusException.class)
                 .verify();
     }
@@ -133,5 +139,17 @@ class SiteUseCaseTest {
     void actionTargets() {
         assertEquals(SiteStatus.ACTIVE, ControlSiteUseCase.Action.ACTIVATE.targetStatus());
         assertEquals(SiteStatus.INACTIVE, ControlSiteUseCase.Action.DEACTIVATE.targetStatus());
+    }
+
+    @Test
+    @DisplayName("a site is looked up in the caller's tenant: another tenant's site is the same as none")
+    void anotherTenantsSite() {
+        UUID other = UUID.randomUUID();
+        when(siteRepository.findById(siteId, other)).thenReturn(Mono.empty());
+
+        StepVerifier.create(new RetrieveSiteUseCase(siteRepository).execute(siteId, other)).expectError(SiteNotFoundException.class).verify();
+        StepVerifier.create(new ControlSiteUseCase(siteRepository).execute(siteId, other, ControlSiteUseCase.Action.DEACTIVATE)).expectError(SiteNotFoundException.class).verify();
+
+        org.mockito.Mockito.verifyNoMoreInteractions(siteRepository);
     }
 }

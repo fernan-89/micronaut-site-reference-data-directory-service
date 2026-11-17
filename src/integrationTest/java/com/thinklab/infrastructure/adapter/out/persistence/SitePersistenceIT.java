@@ -67,7 +67,7 @@ class SitePersistenceIT implements TestPropertyProvider {
     void createAndFind() {
         Site created = sites.create(newSite(UUID.randomUUID())).block();
 
-        Site found = sites.findById(created.getId()).block();
+        Site found = sites.findById(created.getId(), created.getOrganisationId()).block();
 
         assertEquals(created.getSiteName(), found.getSiteName());
         assertEquals(SiteStatus.ACTIVE, found.getStatus());
@@ -97,7 +97,7 @@ class SitePersistenceIT implements TestPropertyProvider {
         sites.updateBasicInfo(created.getId(), "HQ 2", "2 Main St", "Porto", "PT", "4000-001", "Europe/Lisbon", null, null).block();
         sites.updateStatus(created.getId(), SiteStatus.ACTIVE, SiteStatus.INACTIVE).block();
 
-        Site found = sites.findById(created.getId()).block();
+        Site found = sites.findById(created.getId(), created.getOrganisationId()).block();
         assertEquals("HQ 2", found.getSiteName());
         assertEquals("Porto", found.getCity());
         assertNull(found.getLatitude());
@@ -119,7 +119,7 @@ class SitePersistenceIT implements TestPropertyProvider {
 
         sites.updateRackStatus(created.getId(), building.buildingId(), room.roomId(), secondRack.rackId(), RackStatus.DECOMMISSIONED).block();
 
-        Site found = sites.findById(created.getId()).block();
+        Site found = sites.findById(created.getId(), created.getOrganisationId()).block();
         assertEquals(1, found.getBuildings().size());
         List<Rack> racks = found.getBuildings().get(0).rooms().get(0).racks();
         assertEquals(2, racks.size());
@@ -145,11 +145,21 @@ class SitePersistenceIT implements TestPropertyProvider {
     }
 
     @Test
+    @DisplayName("a Site is found by id for its own organisation only: another tenant's is the same as none")
+    void scopedToItsOrganisation() {
+        UUID organisation = UUID.randomUUID();
+        Site created = sites.create(newSite(organisation)).block();
+
+        assertEquals(created.getId(), sites.findById(created.getId(), organisation).block().getId());
+        assertNull(sites.findById(created.getId(), UUID.randomUUID()).block());
+    }
+
+    @Test
     @DisplayName("an unknown site is empty on read and SiteNotFoundException on update")
     void notFound() {
         UUID unknown = UUID.randomUUID();
 
-        assertNull(sites.findById(unknown).block());
+        assertNull(sites.findById(unknown, UUID.randomUUID()).block());
         assertThrows(SiteNotFoundException.class, () -> sites.updateStatus(unknown, SiteStatus.ACTIVE, SiteStatus.INACTIVE).block());
     }
 

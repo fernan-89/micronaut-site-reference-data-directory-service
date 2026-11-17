@@ -19,8 +19,8 @@ public class RetrieveSiteUseCase {
         this.siteRepository = siteRepository;
     }
 
-    public Mono<SiteResponse> execute(UUID id) {
-        return siteRepository.findById(id)
+    public Mono<SiteResponse> execute(UUID id, UUID organisationId) {
+        return siteRepository.findById(id, organisationId)
                 .switchIfEmpty(Mono.error(new SiteNotFoundException(id)))
                 .map(SiteMapper::toResponse);
     }

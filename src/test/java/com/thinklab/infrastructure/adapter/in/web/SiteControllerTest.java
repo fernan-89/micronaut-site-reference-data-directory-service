@@ -41,6 +41,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class SiteControllerTest {
 
+    private static final String TENANT = UUID.randomUUID().toString();
+
     private static final String EXECUTOR = "ops-admin";
 
     @Mock private InitiateSiteUseCase initiateSiteUseCase;
@@ -88,9 +90,9 @@ class SiteControllerTest {
     @Test
     @DisplayName("retrieveById returns 200 OK")
     void retrieveById() {
-        when(retrieveSiteUseCase.execute(siteId)).thenReturn(Mono.just(sample));
+        when(retrieveSiteUseCase.execute(siteId, UUID.fromString(TENANT))).thenReturn(Mono.just(sample));
 
-        StepVerifier.create(controller.retrieveById(siteId))
+        StepVerifier.create(controller.retrieveById(siteId, TENANT))
                 .assertNext(response -> assertEquals(HttpStatus.OK, response.getStatus()))
                 .verifyComplete();
     }
@@ -98,9 +100,9 @@ class SiteControllerTest {
     @Test
     @DisplayName("retrieveById propagates a not-found error")
     void retrieveByIdNotFound() {
-        when(retrieveSiteUseCase.execute(siteId)).thenReturn(Mono.error(new SiteNotFoundException(siteId)));
+        when(retrieveSiteUseCase.execute(siteId, UUID.fromString(TENANT))).thenReturn(Mono.error(new SiteNotFoundException(siteId)));
 
-        StepVerifier.create(controller.retrieveById(siteId))
+        StepVerifier.create(controller.retrieveById(siteId, TENANT))
                 .expectError(SiteNotFoundException.class)
                 .verify();
     }
@@ -127,9 +129,9 @@ class SiteControllerTest {
     @DisplayName("update returns 204 No Content")
     void update() {
         UpdateSiteRequest request = new UpdateSiteRequest("HQ 2", "addr", "city", "country", "zip", "tz", 1.0, 2.0);
-        when(updateSiteUseCase.execute(siteId, request)).thenReturn(Mono.empty());
+        when(updateSiteUseCase.execute(siteId, UUID.fromString(TENANT), request)).thenReturn(Mono.empty());
 
-        StepVerifier.create(controller.update(siteId, EXECUTOR, request))
+        StepVerifier.create(controller.update(siteId, TENANT, EXECUTOR, request))
                 .assertNext(response -> assertEquals(HttpStatus.NO_CONTENT, response.getStatus()))
                 .verifyComplete();
     }
@@ -137,22 +139,22 @@ class SiteControllerTest {
     @Test
     @DisplayName("control/activate and control/deactivate dispatch the matching action")
     void control() {
-        when(controlSiteUseCase.execute(siteId, ControlSiteUseCase.Action.ACTIVATE)).thenReturn(Mono.empty());
-        when(controlSiteUseCase.execute(siteId, ControlSiteUseCase.Action.DEACTIVATE)).thenReturn(Mono.empty());
+        when(controlSiteUseCase.execute(siteId, UUID.fromString(TENANT), ControlSiteUseCase.Action.ACTIVATE)).thenReturn(Mono.empty());
+        when(controlSiteUseCase.execute(siteId, UUID.fromString(TENANT), ControlSiteUseCase.Action.DEACTIVATE)).thenReturn(Mono.empty());
 
-        StepVerifier.create(controller.controlActivate(siteId, EXECUTOR)).expectNextCount(1).verifyComplete();
-        StepVerifier.create(controller.controlDeactivate(siteId, EXECUTOR)).expectNextCount(1).verifyComplete();
-        verify(controlSiteUseCase).execute(siteId, ControlSiteUseCase.Action.ACTIVATE);
-        verify(controlSiteUseCase).execute(siteId, ControlSiteUseCase.Action.DEACTIVATE);
+        StepVerifier.create(controller.controlActivate(siteId, TENANT, EXECUTOR)).expectNextCount(1).verifyComplete();
+        StepVerifier.create(controller.controlDeactivate(siteId, TENANT, EXECUTOR)).expectNextCount(1).verifyComplete();
+        verify(controlSiteUseCase).execute(siteId, UUID.fromString(TENANT), ControlSiteUseCase.Action.ACTIVATE);
+        verify(controlSiteUseCase).execute(siteId, UUID.fromString(TENANT), ControlSiteUseCase.Action.DEACTIVATE);
     }
 
     @Test
     @DisplayName("building/initiate returns 201 Created")
     void initiateBuilding() {
         InitiateBuildingRequest request = new InitiateBuildingRequest("B1", 2);
-        when(initiateBuildingUseCase.execute(siteId, request)).thenReturn(Mono.empty());
+        when(initiateBuildingUseCase.execute(siteId, UUID.fromString(TENANT), request)).thenReturn(Mono.empty());
 
-        StepVerifier.create(controller.initiateBuilding(siteId, EXECUTOR, request))
+        StepVerifier.create(controller.initiateBuilding(siteId, TENANT, EXECUTOR, request))
                 .assertNext(response -> assertEquals(HttpStatus.CREATED, response.getStatus()))
                 .verifyComplete();
     }
@@ -160,9 +162,9 @@ class SiteControllerTest {
     @Test
     @DisplayName("building/retrieve returns the aggregate's buildings")
     void retrieveBuildings() {
-        when(retrieveSiteUseCase.execute(siteId)).thenReturn(Mono.just(sample));
+        when(retrieveSiteUseCase.execute(siteId, UUID.fromString(TENANT))).thenReturn(Mono.just(sample));
 
-        StepVerifier.create(controller.retrieveBuildings(siteId))
+        StepVerifier.create(controller.retrieveBuildings(siteId, TENANT))
                 .assertNext(response -> assertEquals(HttpStatus.OK, response.getStatus()))
                 .verifyComplete();
     }
@@ -171,9 +173,9 @@ class SiteControllerTest {
     @DisplayName("room/initiate returns 201 Created")
     void initiateRoom() {
         InitiateRoomRequest request = new InitiateRoomRequest("R1", "OFFICE");
-        when(initiateRoomUseCase.execute(siteId, buildingId, request)).thenReturn(Mono.empty());
+        when(initiateRoomUseCase.execute(siteId, UUID.fromString(TENANT), buildingId, request)).thenReturn(Mono.empty());
 
-        StepVerifier.create(controller.initiateRoom(siteId, buildingId, EXECUTOR, request))
+        StepVerifier.create(controller.initiateRoom(siteId, TENANT, buildingId, EXECUTOR, request))
                 .assertNext(response -> assertEquals(HttpStatus.CREATED, response.getStatus()))
                 .verifyComplete();
     }
@@ -182,9 +184,9 @@ class SiteControllerTest {
     @DisplayName("rack/initiate returns 201 Created")
     void initiateRack() {
         InitiateRackRequest request = new InitiateRackRequest("K1", 42);
-        when(initiateRackUseCase.execute(siteId, buildingId, roomId, request)).thenReturn(Mono.empty());
+        when(initiateRackUseCase.execute(siteId, UUID.fromString(TENANT), buildingId, roomId, request)).thenReturn(Mono.empty());
 
-        StepVerifier.create(controller.initiateRack(siteId, buildingId, roomId, EXECUTOR, request))
+        StepVerifier.create(controller.initiateRack(siteId, TENANT, buildingId, roomId, EXECUTOR, request))
                 .assertNext(response -> assertEquals(HttpStatus.CREATED, response.getStatus()))
                 .verifyComplete();
     }
@@ -192,10 +194,10 @@ class SiteControllerTest {
     @Test
     @DisplayName("rack/control/activate and .../decommission dispatch the matching action")
     void controlRack() {
-        when(controlRackUseCase.execute(siteId, buildingId, roomId, rackId, ControlRackUseCase.Action.ACTIVATE)).thenReturn(Mono.empty());
-        when(controlRackUseCase.execute(siteId, buildingId, roomId, rackId, ControlRackUseCase.Action.DECOMMISSION)).thenReturn(Mono.empty());
+        when(controlRackUseCase.execute(siteId, UUID.fromString(TENANT), buildingId, roomId, rackId, ControlRackUseCase.Action.ACTIVATE)).thenReturn(Mono.empty());
+        when(controlRackUseCase.execute(siteId, UUID.fromString(TENANT), buildingId, roomId, rackId, ControlRackUseCase.Action.DECOMMISSION)).thenReturn(Mono.empty());
 
-        StepVerifier.create(controller.controlRackActivate(siteId, buildingId, roomId, rackId, EXECUTOR)).expectNextCount(1).verifyComplete();
-        StepVerifier.create(controller.controlRackDecommission(siteId, buildingId, roomId, rackId, EXECUTOR)).expectNextCount(1).verifyComplete();
+        StepVerifier.create(controller.controlRackActivate(siteId, TENANT, buildingId, roomId, rackId, EXECUTOR)).expectNextCount(1).verifyComplete();
+        StepVerifier.create(controller.controlRackDecommission(siteId, TENANT, buildingId, roomId, rackId, EXECUTOR)).expectNextCount(1).verifyComplete();
     }
 }

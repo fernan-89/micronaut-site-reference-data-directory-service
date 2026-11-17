@@ -2,6 +2,7 @@ package com.thinklab.application.usecase;
 
 import com.thinklab.application.dto.request.InitiateBuildingRequest;
 import com.thinklab.application.mapper.SiteMapper;
+import com.thinklab.domain.exception.SiteNotFoundException;
 import com.thinklab.domain.port.HashServicePort;
 import com.thinklab.domain.repository.SiteRepository;
 import jakarta.inject.Singleton;
@@ -29,10 +30,13 @@ public class InitiateBuildingUseCase {
         this.siteRepository = siteRepository;
     }
 
-    public Mono<Void> execute(UUID siteId, InitiateBuildingRequest request) {
+    public Mono<Void> execute(UUID siteId, UUID organisationId, InitiateBuildingRequest request) {
         log.info("[USE CASE] Adding building '{}' to site ID: {}", request.buildingName(), siteId);
 
-        return hashServicePort.generateSovereignId("building-creation")
+        // The site has to be the caller's before anything is written (its organisation never changes, so checking first is enough).
+        return siteRepository.findById(siteId, organisationId)
+                .switchIfEmpty(Mono.error(new SiteNotFoundException(siteId)))
+                .then(Mono.defer(() -> hashServicePort.generateSovereignId("building-creation")))
                 .map(buildingId -> SiteMapper.toBuilding(request, buildingId))
                 .flatMap(building -> siteRepository.addBuilding(siteId, building));
     }

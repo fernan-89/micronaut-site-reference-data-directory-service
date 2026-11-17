@@ -42,12 +42,12 @@ class TransitionRaceIT implements TestPropertyProvider {
         Site site = sites.create(Site.createNew(UUID.randomUUID(), UUID.randomUUID(), "HQ", "1 Main St", "Lisbon", "PT", "1000-001", "Europe/Lisbon", 38.72, -9.14)).block();
 
         List<String> results = Flux.range(0, 10)
-                .flatMap(i -> control.execute(site.getId(), ControlSiteUseCase.Action.DEACTIVATE).thenReturn("OK")
+                .flatMap(i -> control.execute(site.getId(), site.getOrganisationId(), ControlSiteUseCase.Action.DEACTIVATE).thenReturn("OK")
                         .onErrorResume(e -> Mono.just(e.getClass().getSimpleName())), 10)
                 .collectList().block(Duration.ofSeconds(30));
 
         assertEquals(1, results.stream().filter("OK"::equals).count(), results.toString());
         assertEquals(9, results.stream().filter(InvalidSiteStatusException.class.getSimpleName()::equals).count(), results.toString());
-        assertEquals(SiteStatus.INACTIVE, sites.findById(site.getId()).block().getStatus());
+        assertEquals(SiteStatus.INACTIVE, sites.findById(site.getId(), site.getOrganisationId()).block().getStatus());
     }
 }

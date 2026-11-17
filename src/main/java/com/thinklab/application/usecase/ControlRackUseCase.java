@@ -28,10 +28,10 @@ public class ControlRackUseCase {
         this.siteRepository = siteRepository;
     }
 
-    public Mono<Void> execute(UUID siteId, UUID buildingId, UUID roomId, UUID rackId, Action action) {
+    public Mono<Void> execute(UUID siteId, UUID organisationId, UUID buildingId, UUID roomId, UUID rackId, Action action) {
         log.info("[USE CASE] Controlling rack lifecycle: {} for rack {} of site ID: {}", action, rackId, siteId);
 
-        return siteRepository.findById(siteId)
+        return siteRepository.findById(siteId, organisationId)
                 .switchIfEmpty(Mono.error(new SiteNotFoundException(siteId)))
                 .flatMap(site -> {
                     site.changeRackStatus(buildingId, roomId, rackId, action.targetStatus());

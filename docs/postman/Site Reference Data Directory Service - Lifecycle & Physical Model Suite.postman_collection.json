@@ -254,7 +254,12 @@
           ],
           "name": "02. Retrieve Site By ID",
           "request": {
-            "header": [],
+            "header": [
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
+              }
+            ],
             "method": "GET",
             "url": {
               "host": [
@@ -296,6 +301,10 @@
               {
                 "key": "X-Executor",
                 "value": "{{executor}}"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
               }
             ],
             "method": "PUT",
@@ -333,7 +342,12 @@
           ],
           "name": "04. Retrieve Site By ID (Confirm Update, Coordinates Cleared)",
           "request": {
-            "header": [],
+            "header": [
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
+              }
+            ],
             "method": "GET",
             "url": {
               "host": [
@@ -367,6 +381,10 @@
               {
                 "key": "X-Executor",
                 "value": "{{executor}}"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
               }
             ],
             "method": "PUT",
@@ -449,6 +467,10 @@
               {
                 "key": "X-Executor",
                 "value": "{{executor}}"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
               }
             ],
             "method": "PUT",
@@ -498,6 +520,10 @@
               {
                 "key": "X-Executor",
                 "value": "{{executor}}"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
               }
             ],
             "method": "POST",
@@ -533,7 +559,12 @@
           ],
           "name": "02. Building: Retrieve (Extract buildingId)",
           "request": {
-            "header": [],
+            "header": [
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
+              }
+            ],
             "method": "GET",
             "url": {
               "host": [
@@ -576,6 +607,10 @@
               {
                 "key": "X-Executor",
                 "value": "{{executor}}"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
               }
             ],
             "method": "POST",
@@ -618,7 +653,12 @@
           ],
           "name": "04. Building: Retrieve (Extract roomId)",
           "request": {
-            "header": [],
+            "header": [
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
+              }
+            ],
             "method": "GET",
             "url": {
               "host": [
@@ -661,6 +701,10 @@
               {
                 "key": "X-Executor",
                 "value": "{{executor}}"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
               }
             ],
             "method": "POST",
@@ -707,7 +751,12 @@
           ],
           "name": "06. Building: Retrieve (Extract rackId, Confirm ACTIVE)",
           "request": {
-            "header": [],
+            "header": [
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
+              }
+            ],
             "method": "GET",
             "url": {
               "host": [
@@ -742,6 +791,10 @@
               {
                 "key": "X-Executor",
                 "value": "{{executor}}"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
               }
             ],
             "method": "PUT",
@@ -785,7 +838,12 @@
           ],
           "name": "08. Building: Retrieve (Confirm DECOMMISSIONED)",
           "request": {
-            "header": [],
+            "header": [
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
+              }
+            ],
             "method": "GET",
             "url": {
               "host": [
@@ -928,7 +986,12 @@
           ],
           "name": "03. Retrieve Site - Non-existent UUID (404)",
           "request": {
-            "header": [],
+            "header": [
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
+              }
+            ],
             "method": "GET",
             "url": {
               "host": [
@@ -958,7 +1021,12 @@
           ],
           "name": "04. Retrieve Site - Malformed UUID Path (400)",
           "request": {
-            "header": [],
+            "header": [
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
+              }
+            ],
             "method": "GET",
             "url": {
               "host": [
@@ -1066,6 +1134,10 @@
               {
                 "key": "X-Executor",
                 "value": "{{executor}}"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
               }
             ],
             "method": "PUT",
@@ -1115,6 +1187,10 @@
               {
                 "key": "X-Executor",
                 "value": "{{executor}}"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
               }
             ],
             "method": "POST",
@@ -1164,6 +1240,10 @@
               {
                 "key": "X-Executor",
                 "value": "{{executor}}"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
               }
             ],
             "method": "POST",
@@ -1215,6 +1295,10 @@
               {
                 "key": "X-Executor",
                 "value": "{{executor}}"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
               }
             ],
             "method": "POST",
@@ -1261,6 +1345,10 @@
               {
                 "key": "X-Executor",
                 "value": "{{executor}}"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
               }
             ],
             "method": "PUT",
@@ -1308,6 +1396,10 @@
               {
                 "key": "X-Executor",
                 "value": "{{executor}}"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{organisationId}}"
               }
             ],
             "method": "PUT",
@@ -1334,6 +1426,99 @@
         }
       ],
       "name": "03. Negative Tests & Boundary Validation"
+    },
+    {
+      "name": "04. Tenant Isolation on the By-Id Routes",
+      "item": [
+        {
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('otherOrganisationId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404 (another tenant\\'s object is the same as none)', () => pm.response.to.have.status(404));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "90. Read it as another tenant (404)",
+          "request": {
+            "header": [
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{otherOrganisationId}}"
+              },
+              {
+                "key": "X-Executor",
+                "value": "{{executor}}"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "site-reference-data-directory",
+                "v1",
+                "{{siteId}}",
+                "retrieve"
+              ],
+              "raw": "{{base_url}}/site-reference-data-directory/v1/{{siteId}}/retrieve"
+            }
+          }
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404 (another tenant\\'s object is the same as none)', () => pm.response.to.have.status(404));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "92. Change it as another tenant (404)",
+          "request": {
+            "header": [
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{otherOrganisationId}}"
+              },
+              {
+                "key": "X-Executor",
+                "value": "{{executor}}"
+              }
+            ],
+            "method": "PUT",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "site-reference-data-directory",
+                "v1",
+                "{{siteId}}",
+                "control",
+                "deactivate"
+              ],
+              "raw": "{{base_url}}/site-reference-data-directory/v1/{{siteId}}/control/deactivate"
+            }
+          }
+        }
+      ]
     }
   ],
   "variable": [
