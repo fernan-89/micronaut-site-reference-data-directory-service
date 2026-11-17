@@ -38,7 +38,11 @@ public interface SiteRepository {
     Mono<Void> updateBasicInfo(UUID id, String siteName, String address, String city, String country,
                                 String zipCode, String timezone, Double latitude, Double longitude);
 
-    Mono<Void> updateStatus(UUID id, SiteStatus status);
+    /**
+     * A guarded write (platform race audit): applies only if the site still has {@code expectedStatus}, the status the caller read; a miss is
+     * {@link com.thinklab.domain.exception.InvalidSiteStatusException} (409) when the site exists and {@link com.thinklab.domain.exception.SiteNotFoundException} when it does not.
+     */
+    Mono<Void> updateStatus(UUID id, SiteStatus expectedStatus, SiteStatus status);
 
     Mono<Void> addBuilding(UUID id, Building building);
 

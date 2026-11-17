@@ -95,7 +95,7 @@ class SitePersistenceIT implements TestPropertyProvider {
         Site created = sites.create(newSite(UUID.randomUUID())).block();
 
         sites.updateBasicInfo(created.getId(), "HQ 2", "2 Main St", "Porto", "PT", "4000-001", "Europe/Lisbon", null, null).block();
-        sites.updateStatus(created.getId(), SiteStatus.INACTIVE).block();
+        sites.updateStatus(created.getId(), SiteStatus.ACTIVE, SiteStatus.INACTIVE).block();
 
         Site found = sites.findById(created.getId()).block();
         assertEquals("HQ 2", found.getSiteName());
@@ -134,7 +134,7 @@ class SitePersistenceIT implements TestPropertyProvider {
         Site active = sites.create(newSite(organisation)).block();
         Site toDeactivate = sites.create(newSite(organisation)).block();
         sites.create(newSite(UUID.randomUUID())).block();
-        sites.updateStatus(toDeactivate.getId(), SiteStatus.INACTIVE).block();
+        sites.updateStatus(toDeactivate.getId(), SiteStatus.ACTIVE, SiteStatus.INACTIVE).block();
 
         assertEquals(Set.of(active.getId(), toDeactivate.getId()),
                 ids(sites.findAllByOrganisationId(organisation, null).collectList().block()));
@@ -150,7 +150,7 @@ class SitePersistenceIT implements TestPropertyProvider {
         UUID unknown = UUID.randomUUID();
 
         assertNull(sites.findById(unknown).block());
-        assertThrows(SiteNotFoundException.class, () -> sites.updateStatus(unknown, SiteStatus.INACTIVE).block());
+        assertThrows(SiteNotFoundException.class, () -> sites.updateStatus(unknown, SiteStatus.ACTIVE, SiteStatus.INACTIVE).block());
     }
 
     @Test

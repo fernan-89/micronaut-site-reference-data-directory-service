@@ -101,11 +101,11 @@ class SiteUseCaseTest {
     @DisplayName("ControlSiteUseCase loads the aggregate, validates the transition, then issues the write")
     void controlActivateDeactivate() {
         when(siteRepository.findById(siteId)).thenReturn(Mono.just(site));
-        when(siteRepository.updateStatus(siteId, SiteStatus.INACTIVE)).thenReturn(Mono.empty());
+        when(siteRepository.updateStatus(siteId, SiteStatus.ACTIVE, SiteStatus.INACTIVE)).thenReturn(Mono.empty());
 
         StepVerifier.create(new ControlSiteUseCase(siteRepository).execute(siteId, ControlSiteUseCase.Action.DEACTIVATE))
                 .verifyComplete();
-        verify(siteRepository).updateStatus(siteId, SiteStatus.INACTIVE);
+        verify(siteRepository).updateStatus(siteId, SiteStatus.ACTIVE, SiteStatus.INACTIVE);
     }
 
     @Test

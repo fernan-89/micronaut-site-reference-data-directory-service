@@ -9,6 +9,7 @@ import com.mongodb.client.model.geojson.Point;
 import com.mongodb.client.model.geojson.Position;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoCollection;
+import com.thinklab.domain.exception.InvalidSiteStatusException;
 import com.thinklab.domain.exception.SiteNotFoundException;
 import com.thinklab.domain.model.Site;
 import com.thinklab.domain.model.Site.Building;
@@ -132,15 +133,25 @@ public class SiteMongoRepositoryAdapter implements SiteRepository {
     }
 
     @Override
-    public Mono<Void> updateStatus(UUID id, SiteStatus status) {
-        log.debug("[PERSISTENCE] Partial Mutation: updateStatus for ID: {}", id);
+    public Mono<Void> updateStatus(UUID id, SiteStatus expectedStatus, SiteStatus status) {
+        log.debug("[PERSISTENCE] Guarded Mutation: updateStatus for ID: {}", id);
 
         Bson update = Updates.combine(
                 Updates.set("status", status.name()),
                 Updates.set(FIELD_UPDATED_AT, Instant.now())
         );
 
-        return executeUpdate(id, update);
+        return Mono.from(getCollection().updateOne(Filters.and(Filters.eq(FIELD_ID, id), Filters.eq("status", expectedStatus.name())), update))
+                .flatMap(result -> {
+                    if (result.getMatchedCount() > 0) {
+                        return Mono.<Void>empty();
+                    }
+                    return Mono.from(getCollection().countDocuments(Filters.eq(FIELD_ID, id)))
+                            .flatMap(count -> count == 0
+                                    ? Mono.<Void>error(new SiteNotFoundException(id))
+                                    : Mono.<Void>error(new InvalidSiteStatusException(
+                                            "The site was changed by someone else while this change was being recorded; read it again and retry.")));
+                });
     }
 
     @Override
