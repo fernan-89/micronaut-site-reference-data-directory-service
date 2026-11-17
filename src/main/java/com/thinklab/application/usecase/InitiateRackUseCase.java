@@ -30,10 +30,10 @@ public class InitiateRackUseCase {
         this.siteRepository = siteRepository;
     }
 
-    public Mono<Void> execute(UUID siteId, UUID buildingId, UUID roomId, InitiateRackRequest request) {
+    public Mono<Void> execute(UUID siteId, UUID organisationId, UUID buildingId, UUID roomId, InitiateRackRequest request) {
         log.info("[USE CASE] Adding rack '{}' to room {} of site ID: {}", request.rackName(), roomId, siteId);
 
-        return siteRepository.findById(siteId)
+        return siteRepository.findById(siteId, organisationId)
                 .switchIfEmpty(Mono.error(new SiteNotFoundException(siteId)))
                 .flatMap(site -> {
                     site.findRoom(site.findBuilding(buildingId), roomId); // fail fast, before spending a hash-service call

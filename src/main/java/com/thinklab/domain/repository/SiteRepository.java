@@ -25,7 +25,7 @@ public interface SiteRepository {
 
     Mono<Site> create(Site site);
 
-    Mono<Site> findById(UUID id);
+    Mono<Site> findById(UUID id, UUID organisationId);
 
     /**
      * Tenant-scoped listing of Sites belonging to a given Organisation.

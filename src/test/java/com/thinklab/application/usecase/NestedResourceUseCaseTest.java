@@ -33,6 +33,7 @@ class NestedResourceUseCaseTest {
     @Mock private SiteRepository siteRepository;
     @Mock private HashServicePort hashServicePort;
 
+    private UUID organisationId;
     private UUID siteId;
     private UUID buildingId;
     private UUID roomId;
@@ -40,23 +41,25 @@ class NestedResourceUseCaseTest {
 
     @BeforeEach
     void setUp() {
+        organisationId = UUID.randomUUID();
         siteId = UUID.randomUUID();
         buildingId = UUID.randomUUID();
         roomId = UUID.randomUUID();
-        site = Site.createNew(siteId, UUID.randomUUID(), "HQ", null, null, null, null, null, null, null);
+        site = Site.createNew(siteId, organisationId, "HQ", null, null, null, null, null, null, null);
         site.addBuilding(new Building(buildingId, "B1", null, List.of()));
         site.addRoom(buildingId, new Room(roomId, "R1", RoomType.DATA_CENTER, List.of()));
     }
 
     @Test
-    @DisplayName("InitiateBuildingUseCase generates an id and appends via the repository, without pre-loading")
+    @DisplayName("InitiateBuildingUseCase checks the site is the caller's, generates an id and appends via the repository")
     void initiateBuilding() {
         UUID newBuildingId = UUID.randomUUID();
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.just(site));
         when(hashServicePort.generateSovereignId("building-creation")).thenReturn(Mono.just(newBuildingId));
         when(siteRepository.addBuilding(org.mockito.ArgumentMatchers.eq(siteId), any(Building.class))).thenReturn(Mono.empty());
 
         StepVerifier.create(new InitiateBuildingUseCase(hashServicePort, siteRepository)
-                        .execute(siteId, new InitiateBuildingRequest("B2", 1)))
+                        .execute(siteId, organisationId, new InitiateBuildingRequest("B2", 1)))
                 .verifyComplete();
     }
 
@@ -64,23 +67,23 @@ class NestedResourceUseCaseTest {
     @DisplayName("InitiateRoomUseCase loads the Site, validates the buildingId via the domain, then writes")
     void initiateRoom() {
         UUID newRoomId = UUID.randomUUID();
-        when(siteRepository.findById(siteId)).thenReturn(Mono.just(site));
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.just(site));
         when(hashServicePort.generateSovereignId("room-creation")).thenReturn(Mono.just(newRoomId));
         when(siteRepository.addRoom(org.mockito.ArgumentMatchers.eq(siteId), org.mockito.ArgumentMatchers.eq(buildingId), any(Room.class)))
                 .thenReturn(Mono.empty());
 
         StepVerifier.create(new InitiateRoomUseCase(hashServicePort, siteRepository)
-                        .execute(siteId, buildingId, new InitiateRoomRequest("R2", "OFFICE")))
+                        .execute(siteId, organisationId, buildingId, new InitiateRoomRequest("R2", "OFFICE")))
                 .verifyComplete();
     }
 
     @Test
     @DisplayName("InitiateRoomUseCase 404s when the Site itself does not exist")
     void initiateRoomSiteNotFound() {
-        when(siteRepository.findById(siteId)).thenReturn(Mono.empty());
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.empty());
 
         StepVerifier.create(new InitiateRoomUseCase(hashServicePort, siteRepository)
-                        .execute(siteId, buildingId, new InitiateRoomRequest("R2", "OFFICE")))
+                        .execute(siteId, organisationId, buildingId, new InitiateRoomRequest("R2", "OFFICE")))
                 .expectError(SiteNotFoundException.class)
                 .verify();
     }
@@ -88,10 +91,10 @@ class NestedResourceUseCaseTest {
     @Test
     @DisplayName("InitiateRoomUseCase propagates the domain's not-found when the buildingId is unknown")
     void initiateRoomBuildingNotFound() {
-        when(siteRepository.findById(siteId)).thenReturn(Mono.just(site));
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.just(site));
 
         StepVerifier.create(new InitiateRoomUseCase(hashServicePort, siteRepository)
-                        .execute(siteId, UUID.randomUUID(), new InitiateRoomRequest("R2", "OFFICE")))
+                        .execute(siteId, organisationId, UUID.randomUUID(), new InitiateRoomRequest("R2", "OFFICE")))
                 .expectError(SiteNotFoundException.class)
                 .verify();
     }
@@ -100,23 +103,23 @@ class NestedResourceUseCaseTest {
     @DisplayName("InitiateRackUseCase loads the Site, validates buildingId/roomId via the domain, then writes")
     void initiateRack() {
         UUID newRackId = UUID.randomUUID();
-        when(siteRepository.findById(siteId)).thenReturn(Mono.just(site));
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.just(site));
         when(hashServicePort.generateSovereignId("rack-creation")).thenReturn(Mono.just(newRackId));
         when(siteRepository.addRack(org.mockito.ArgumentMatchers.eq(siteId), org.mockito.ArgumentMatchers.eq(buildingId),
                 org.mockito.ArgumentMatchers.eq(roomId), any(Rack.class))).thenReturn(Mono.empty());
 
         StepVerifier.create(new InitiateRackUseCase(hashServicePort, siteRepository)
-                        .execute(siteId, buildingId, roomId, new InitiateRackRequest("K1", 42)))
+                        .execute(siteId, organisationId, buildingId, roomId, new InitiateRackRequest("K1", 42)))
                 .verifyComplete();
     }
 
     @Test
     @DisplayName("InitiateRackUseCase propagates the domain's not-found when the roomId is unknown")
     void initiateRackRoomNotFound() {
-        when(siteRepository.findById(siteId)).thenReturn(Mono.just(site));
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.just(site));
 
         StepVerifier.create(new InitiateRackUseCase(hashServicePort, siteRepository)
-                        .execute(siteId, buildingId, UUID.randomUUID(), new InitiateRackRequest("K1", 42)))
+                        .execute(siteId, organisationId, buildingId, UUID.randomUUID(), new InitiateRackRequest("K1", 42)))
                 .expectError(SiteNotFoundException.class)
                 .verify();
     }
@@ -124,10 +127,10 @@ class NestedResourceUseCaseTest {
     @Test
     @DisplayName("InitiateRackUseCase 404s when the Site itself does not exist")
     void initiateRackSiteNotFound() {
-        when(siteRepository.findById(siteId)).thenReturn(Mono.empty());
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.empty());
 
         StepVerifier.create(new InitiateRackUseCase(hashServicePort, siteRepository)
-                        .execute(siteId, buildingId, roomId, new InitiateRackRequest("K1", 42)))
+                        .execute(siteId, organisationId, buildingId, roomId, new InitiateRackRequest("K1", 42)))
                 .expectError(SiteNotFoundException.class)
                 .verify();
     }
@@ -137,21 +140,21 @@ class NestedResourceUseCaseTest {
     void controlRack() {
         UUID rackId = UUID.randomUUID();
         site.addRack(buildingId, roomId, new Rack(rackId, "K1", 42, RackStatus.ACTIVE));
-        when(siteRepository.findById(siteId)).thenReturn(Mono.just(site));
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.just(site));
         when(siteRepository.updateRackStatus(siteId, buildingId, roomId, rackId, RackStatus.DECOMMISSIONED)).thenReturn(Mono.empty());
 
         StepVerifier.create(new ControlRackUseCase(siteRepository)
-                        .execute(siteId, buildingId, roomId, rackId, ControlRackUseCase.Action.DECOMMISSION))
+                        .execute(siteId, organisationId, buildingId, roomId, rackId, ControlRackUseCase.Action.DECOMMISSION))
                 .verifyComplete();
     }
 
     @Test
     @DisplayName("ControlRackUseCase 404s when the Site itself does not exist")
     void controlRackSiteNotFound() {
-        when(siteRepository.findById(siteId)).thenReturn(Mono.empty());
+        when(siteRepository.findById(siteId, organisationId)).thenReturn(Mono.empty());
 
         StepVerifier.create(new ControlRackUseCase(siteRepository)
-                        .execute(siteId, buildingId, roomId, UUID.randomUUID(), ControlRackUseCase.Action.ACTIVATE))
+                        .execute(siteId, organisationId, buildingId, roomId, UUID.randomUUID(), ControlRackUseCase.Action.ACTIVATE))
                 .expectError(SiteNotFoundException.class)
                 .verify();
     }

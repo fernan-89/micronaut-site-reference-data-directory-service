@@ -57,7 +57,7 @@ Building and Room have no status of their own — they exist for as long as thei
 
 ## BIAN Behavior Qualifier Contract (`/site-reference-data-directory/v1`)
 
-`X-Tenant-Id` (Organisation UUID) is mandatory on the collection `retrieve`; `X-Executor` is
+`X-Tenant-Id` (Organisation UUID) is mandatory on every route that takes a site id and on the collection `retrieve` (ADR-033: another tenant's site is a 404); `X-Executor` is
 mandatory on every mutation. There is no `DELETE`.
 
 | Behavior Qualifier | Method & Path |

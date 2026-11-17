@@ -101,10 +101,10 @@ public class SiteController {
 
     /** Behavior Qualifier: {@code retrieve}. Fetches a single Site by UUID. */
     @Get("/{id}/retrieve")
-    public Mono<HttpResponse<SiteResponse>> retrieveById(@PathVariable UUID id) {
+    public Mono<HttpResponse<SiteResponse>> retrieveById(@PathVariable UUID id, @Header(TENANT_HEADER) @NotBlank String tenantId) {
         log.info("[ACTION: RETRIEVE_SITE] Received request to get site by ID: {}", id);
 
-        return retrieveSiteUseCase.execute(id).map(HttpResponse::ok);
+        return retrieveSiteUseCase.execute(id, UUID.fromString(tenantId)).map(HttpResponse::ok);
     }
 
     /** Behavior Qualifier: {@code retrieve} (collection). Lists Sites scoped to a tenant. */
@@ -121,68 +121,68 @@ public class SiteController {
     /** Behavior Qualifier: {@code update}. Updates basic Site info. */
     @Put("/{id}/update")
     public Mono<HttpResponse<Void>> update(
-            @PathVariable UUID id,
+            @PathVariable UUID id, @Header(TENANT_HEADER) @NotBlank String tenantId,
             @Header(EXECUTOR_HEADER) @NotBlank String executor,
             @Body @Valid UpdateSiteRequest request
     ) {
         log.info("[ACTION: UPDATE_SITE] [EXECUTOR: {}] Received request to update site info for ID: {}", executor, id);
 
-        return updateSiteUseCase.execute(id, request).thenReturn(HttpResponse.noContent());
+        return updateSiteUseCase.execute(id, UUID.fromString(tenantId), request).thenReturn(HttpResponse.noContent());
     }
 
     /** Behavior Qualifier: {@code control/activate}. */
     @Put("/{id}/control/activate")
-    public Mono<HttpResponse<Void>> controlActivate(@PathVariable UUID id, @Header(EXECUTOR_HEADER) @NotBlank String executor) {
+    public Mono<HttpResponse<Void>> controlActivate(@PathVariable UUID id, @Header(TENANT_HEADER) @NotBlank String tenantId, @Header(EXECUTOR_HEADER) @NotBlank String executor) {
         log.info("[ACTION: CONTROL_SITE] [EXECUTOR: {}] activate for ID: {}", executor, id);
 
-        return controlSiteUseCase.execute(id, ControlSiteUseCase.Action.ACTIVATE).thenReturn(HttpResponse.noContent());
+        return controlSiteUseCase.execute(id, UUID.fromString(tenantId), ControlSiteUseCase.Action.ACTIVATE).thenReturn(HttpResponse.noContent());
     }
 
     /** Behavior Qualifier: {@code control/deactivate}. Terminal, soft — replaces a physical DELETE. */
     @Put("/{id}/control/deactivate")
-    public Mono<HttpResponse<Void>> controlDeactivate(@PathVariable UUID id, @Header(EXECUTOR_HEADER) @NotBlank String executor) {
+    public Mono<HttpResponse<Void>> controlDeactivate(@PathVariable UUID id, @Header(TENANT_HEADER) @NotBlank String tenantId, @Header(EXECUTOR_HEADER) @NotBlank String executor) {
         log.info("[ACTION: CONTROL_SITE] [EXECUTOR: {}] deactivate for ID: {}", executor, id);
 
-        return controlSiteUseCase.execute(id, ControlSiteUseCase.Action.DEACTIVATE).thenReturn(HttpResponse.noContent());
+        return controlSiteUseCase.execute(id, UUID.fromString(tenantId), ControlSiteUseCase.Action.DEACTIVATE).thenReturn(HttpResponse.noContent());
     }
 
     /** Behavior Qualifier: {@code building/initiate}. */
     @Post("/{id}/building/initiate")
     public Mono<HttpResponse<Void>> initiateBuilding(
-            @PathVariable UUID id,
+            @PathVariable UUID id, @Header(TENANT_HEADER) @NotBlank String tenantId,
             @Header(EXECUTOR_HEADER) @NotBlank String executor,
             @Body @Valid InitiateBuildingRequest request
     ) {
         log.info("[ACTION: INITIATE_BUILDING] [EXECUTOR: {}] Received request to add building for site ID: {}", executor, id);
 
-        return initiateBuildingUseCase.execute(id, request).thenReturn(HttpResponse.status(HttpStatus.CREATED));
+        return initiateBuildingUseCase.execute(id, UUID.fromString(tenantId), request).thenReturn(HttpResponse.status(HttpStatus.CREATED));
     }
 
     /** Behavior Qualifier: {@code building/retrieve} (collection). Lists all buildings of a Site. */
     @Get("/{id}/building/retrieve")
-    public Mono<HttpResponse<List<SiteResponse.BuildingResponse>>> retrieveBuildings(@PathVariable UUID id) {
+    public Mono<HttpResponse<List<SiteResponse.BuildingResponse>>> retrieveBuildings(@PathVariable UUID id, @Header(TENANT_HEADER) @NotBlank String tenantId) {
         log.info("[ACTION: RETRIEVE_BUILDINGS] Received request to list buildings for site ID: {}", id);
 
-        return retrieveSiteUseCase.execute(id).map(response -> HttpResponse.ok(response.buildings()));
+        return retrieveSiteUseCase.execute(id, UUID.fromString(tenantId)).map(response -> HttpResponse.ok(response.buildings()));
     }
 
     /** Behavior Qualifier: {@code building/{buildingId}/room/initiate}. */
     @Post("/{id}/building/{buildingId}/room/initiate")
     public Mono<HttpResponse<Void>> initiateRoom(
-            @PathVariable UUID id,
+            @PathVariable UUID id, @Header(TENANT_HEADER) @NotBlank String tenantId,
             @PathVariable UUID buildingId,
             @Header(EXECUTOR_HEADER) @NotBlank String executor,
             @Body @Valid InitiateRoomRequest request
     ) {
         log.info("[ACTION: INITIATE_ROOM] [EXECUTOR: {}] Received request to add room to building {} of site ID: {}", executor, buildingId, id);
 
-        return initiateRoomUseCase.execute(id, buildingId, request).thenReturn(HttpResponse.status(HttpStatus.CREATED));
+        return initiateRoomUseCase.execute(id, UUID.fromString(tenantId), buildingId, request).thenReturn(HttpResponse.status(HttpStatus.CREATED));
     }
 
     /** Behavior Qualifier: {@code building/{buildingId}/room/{roomId}/rack/initiate}. */
     @Post("/{id}/building/{buildingId}/room/{roomId}/rack/initiate")
     public Mono<HttpResponse<Void>> initiateRack(
-            @PathVariable UUID id,
+            @PathVariable UUID id, @Header(TENANT_HEADER) @NotBlank String tenantId,
             @PathVariable UUID buildingId,
             @PathVariable UUID roomId,
             @Header(EXECUTOR_HEADER) @NotBlank String executor,
@@ -190,30 +190,30 @@ public class SiteController {
     ) {
         log.info("[ACTION: INITIATE_RACK] [EXECUTOR: {}] Received request to add rack to room {} of site ID: {}", executor, roomId, id);
 
-        return initiateRackUseCase.execute(id, buildingId, roomId, request).thenReturn(HttpResponse.status(HttpStatus.CREATED));
+        return initiateRackUseCase.execute(id, UUID.fromString(tenantId), buildingId, roomId, request).thenReturn(HttpResponse.status(HttpStatus.CREATED));
     }
 
     /** Behavior Qualifier: {@code .../rack/{rackId}/control/activate}. */
     @Put("/{id}/building/{buildingId}/room/{roomId}/rack/{rackId}/control/activate")
     public Mono<HttpResponse<Void>> controlRackActivate(
-            @PathVariable UUID id, @PathVariable UUID buildingId, @PathVariable UUID roomId, @PathVariable UUID rackId,
+            @PathVariable UUID id, @Header(TENANT_HEADER) @NotBlank String tenantId, @PathVariable UUID buildingId, @PathVariable UUID roomId, @PathVariable UUID rackId,
             @Header(EXECUTOR_HEADER) @NotBlank String executor
     ) {
         log.info("[ACTION: CONTROL_RACK] [EXECUTOR: {}] activate for rack {} of site ID: {}", executor, rackId, id);
 
-        return controlRackUseCase.execute(id, buildingId, roomId, rackId, ControlRackUseCase.Action.ACTIVATE)
+        return controlRackUseCase.execute(id, UUID.fromString(tenantId), buildingId, roomId, rackId, ControlRackUseCase.Action.ACTIVATE)
                 .thenReturn(HttpResponse.noContent());
     }
 
     /** Behavior Qualifier: {@code .../rack/{rackId}/control/decommission}. */
     @Put("/{id}/building/{buildingId}/room/{roomId}/rack/{rackId}/control/decommission")
     public Mono<HttpResponse<Void>> controlRackDecommission(
-            @PathVariable UUID id, @PathVariable UUID buildingId, @PathVariable UUID roomId, @PathVariable UUID rackId,
+            @PathVariable UUID id, @Header(TENANT_HEADER) @NotBlank String tenantId, @PathVariable UUID buildingId, @PathVariable UUID roomId, @PathVariable UUID rackId,
             @Header(EXECUTOR_HEADER) @NotBlank String executor
     ) {
         log.info("[ACTION: CONTROL_RACK] [EXECUTOR: {}] decommission for rack {} of site ID: {}", executor, rackId, id);
 
-        return controlRackUseCase.execute(id, buildingId, roomId, rackId, ControlRackUseCase.Action.DECOMMISSION)
+        return controlRackUseCase.execute(id, UUID.fromString(tenantId), buildingId, roomId, rackId, ControlRackUseCase.Action.DECOMMISSION)
                 .thenReturn(HttpResponse.noContent());
     }
 }

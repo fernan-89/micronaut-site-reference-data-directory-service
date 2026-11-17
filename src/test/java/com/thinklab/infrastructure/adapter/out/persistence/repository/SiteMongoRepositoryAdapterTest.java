@@ -96,7 +96,7 @@ class SiteMongoRepositoryAdapterTest {
             return null;
         }).when(publisher).subscribe(any());
 
-        StepVerifier.create(adapter.findById(siteId))
+        StepVerifier.create(adapter.findById(siteId, UUID.randomUUID()))
                 .assertNext(found -> org.junit.jupiter.api.Assertions.assertEquals(siteId, found.getId()))
                 .verifyComplete();
     }

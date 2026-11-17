@@ -30,10 +30,10 @@ public class ControlSiteUseCase {
         this.siteRepository = siteRepository;
     }
 
-    public Mono<Void> execute(UUID id, Action action) {
+    public Mono<Void> execute(UUID id, UUID organisationId, Action action) {
         log.info("[USE CASE] Controlling site lifecycle: {} for ID: {}", action, id);
 
-        return siteRepository.findById(id)
+        return siteRepository.findById(id, organisationId)
                 .switchIfEmpty(Mono.error(new SiteNotFoundException(id)))
                 .flatMap(site -> {
                     SiteStatus statusRead = site.getStatus();
