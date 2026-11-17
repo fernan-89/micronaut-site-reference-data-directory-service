@@ -78,7 +78,7 @@ mandatory on every mutation. There is no `DELETE`.
 | error_code | HTTP | Meaning |
 |---|---|---|
 | `ERR-SITE-00404` | 404 | Site, Building, Room or Rack not found |
-| `ERR-SITE-00409` | 409 | Illegal or idempotent lifecycle transition (Site or Rack, ADR-019) |
+| `ERR-SITE-00409` | 409 | Illegal or idempotent lifecycle transition (Site or Rack, ADR-019), or a Site status change that lost a race with another (ADR-032) |
 | `ERR-VALIDATION-00400` | 400 | Payload/header/identifier validation failure |
 | `ERR-INTERNAL-00500` | 500 | Unexpected technical failure |
 

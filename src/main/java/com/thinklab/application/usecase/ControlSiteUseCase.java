@@ -36,8 +36,9 @@ public class ControlSiteUseCase {
         return siteRepository.findById(id)
                 .switchIfEmpty(Mono.error(new SiteNotFoundException(id)))
                 .flatMap(site -> {
+                    SiteStatus statusRead = site.getStatus();
                     site.changeStatus(action.targetStatus());
-                    return siteRepository.updateStatus(id, action.targetStatus());
+                    return siteRepository.updateStatus(id, statusRead, action.targetStatus());
                 });
     }
 
